@@ -122,14 +122,21 @@ function renderQuickTest(body,topic,record,stage){
  const quick=(record.quick??={})[stage]??={draft:[]};
  const submitted=quick.submitted;
  const reviewed=submitted?questions.slice(0,submitted.length):[];
- const answers=reviewed.map((q,i)=>match(submitted[i]??'',q[1]));
+ const answers=reviewed.map((q,i)=>quick.adjust?.[i]??match(submitted[i]??'',q[1]));
  const formatQuestion=([prompt],i)=>'<label for="mini'+i+'">'+(i+1)+'. '+html(prompt)+'</label><input id="mini'+i+'" lang="en" type="text" autocomplete="off" spellcheck="false" value="'+html(quick.draft[i]??'')+'">';
  const split=application?0:2;
  const name=application?'Aplicação':'Teste do dia';
  const context='<p class="source" lang="en">'+html(source)+'</p>';
  const items=questions.map(formatQuestion);
- body.insertAdjacentHTML('beforeend','<form id="quick-test"><fieldset><legend>'+name+' · '+questions.length+' pontos</legend><p>Fecha o manual e responde em inglês. Reserva '+(application?(questions.length>4?'20–25':'5–8'):'8–12')+' minutos.</p>'+items.slice(0,split).join('')+context+items.slice(split).join('')+'<button type="submit" class="primary">Entregar '+(application?'aplicação':'teste do dia')+'</button></fieldset></form><div id="mini-result" aria-live="polite">'+(submitted?'<article><h4>Última entrega · '+answers.filter(Boolean).length+'/'+reviewed.length+'</h4>'+reviewed.map(([,solution],i)=>'<p>'+(i+1)+'. '+(answers[i]?'Correta':'Rever')+' · A tua resposta: '+html(submitted[i]||'—')+' · Solução: <span lang="en">'+html(variants(solution).join(' · '))+'</span></p>').join('')+'</article>':'')+'</div>');
+ const feedback=submitted?'<article><h4>Última entrega · '+answers.filter(Boolean).length+'/'+reviewed.length+'</h4><p>A correção automática compara com as respostas previstas. Um adulto pode aceitar uma resposta equivalente se ela cumprir o que a pergunta pede.</p>'+reviewed.map(([prompt,solution],i)=>'<div class="feedback '+(answers[i]?'':'review')+'"><strong>'+(i+1)+'. '+html(prompt)+'</strong><p>'+(answers[i]?'Correta':'Rever')+' · A tua resposta: '+html(submitted[i]||'—')+'</p><p>Resposta de referência: <span lang="en">'+html(variants(solution).join(' · '))+'</span></p>'+(submitted[i]?.trim()?'<button type="button" data-mini-adjust="'+i+'">'+(answers[i]?'Marcar incorreta':'Aceitar resposta equivalente')+'</button>':'')+'</div>').join('')+'</article>':'';
+ body.insertAdjacentHTML('beforeend','<form id="quick-test"><fieldset><legend>'+name+' · '+questions.length+' pontos</legend><p>Fecha o manual e responde em inglês. Reserva '+(application?(questions.length>4?'20–25':'5–8'):'8–12')+' minutos.</p>'+items.slice(0,split).join('')+context+items.slice(split).join('')+'<button type="submit" class="primary">Entregar '+(application?'aplicação':'teste do dia')+'</button></fieldset></form><div id="mini-result" aria-live="polite">'+feedback+'</div>');
  const form=document.querySelector('#quick-test');
+ document.querySelector('#mini-result').querySelectorAll('[data-mini-adjust]').forEach(button=>button.onclick=()=>{
+  const i=+button.dataset.miniAdjust;
+  (quick.adjust??={})[i]=!answers[i];
+  save();cloudChanged(day,true);render();
+  document.querySelector('[data-mini-adjust="'+i+'"]').focus();
+ });
  form.addEventListener('input',e=>{
   if(!/^mini\d+$/.test(e.target.id))return;
   quick.draft[+e.target.id.slice(4)]=e.target.value;
@@ -139,6 +146,7 @@ function renderQuickTest(body,topic,record,stage){
   e.preventDefault();
   if(questions.some((_,i)=>!quick.draft[i]?.trim())&&!confirm('Há respostas em branco. Queres entregar assim?'))return;
   quick.submitted=questions.map((_,i)=>quick.draft[i]??'');
+  delete quick.adjust;
   save();cloudChanged(day,true);render();document.querySelector('#mini-result').scrollIntoView({block:'nearest'});
  });
 }
