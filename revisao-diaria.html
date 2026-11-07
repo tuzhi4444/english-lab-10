@@ -15,7 +15,7 @@ textarea{width:100%;min-height:90px;display:block;margin-top:8px;resize:vertical
 </style>
 </head>
 <body>
-<header><div class="eyebrow">TRÊS DISCIPLINAS · CERCA DE 15 MINUTOS</div><h1>Revisão diária</h1><p>Depois das aulas, responde a uma pergunta de cada disciplina. Usa as tuas palavras.</p></header>
+<header><div class="eyebrow">TRÊS DISCIPLINAS · CERCA DE 15 MINUTOS</div><h1>Revisão diária</h1><p>Estuda e entrega primeiro os testes das disciplinas. Depois da revisão das tuas respostas, aparecem aqui perguntas feitas para ti.</p></header>
 <main>
  <section class="panel" aria-labelledby="calendar-heading">
   <div class="row toolbar"><div><p class="tag" id="calendar-heading">DIA DE REVISÃO</p><h2 id="day-title"></h2><p class="meta" id="day-date"></p></div>
@@ -28,7 +28,7 @@ textarea{width:100%;min-height:90px;display:block;margin-top:8px;resize:vertical
    <form id="cloud-form"><label for="cloud-code">Código privado de ligação</label><br><input id="cloud-code" type="password" required autocomplete="off" autocapitalize="none" spellcheck="false"> <button type="submit">Ligar</button></form>
   </details>
   <div class="row"><button id="cloud-refresh" type="button" hidden>Consultar a nuvem</button><button id="cloud-resolve" type="button" hidden>Resolver versões diferentes</button></div>
-  <details lang="zh-Hans"><summary>家长查看</summary><p id="parent-status"></p><p id="parent-cloud"></p><p>每天用同一个浏览器打开本页，点「Atualizar e ver hoje」查看新题。三题写完后点「Concluir」，看到「✓ Guardado na nuvem」表示云端已收到。</p></details>
+  <details lang="zh-Hans"><summary>家长查看</summary><p id="parent-status"></p><p id="parent-cloud"></p><p>先完成当天的课程小测。小测同步后，告诉我查看当天答卷。订正题发布后点「Atualizar e ver hoje」查看。写完点「Concluir」，看到「✓ Guardado na nuvem」表示云端已收到。</p></details>
  </section>
  <div id="tasks"></div>
 </main>
@@ -54,102 +54,6 @@ const firstDay=[
   'Encontrámos uma moeda antiga e um mapa. Que tipo de fonte é cada um? O mapa mostra quem usava a moeda? Explica.',
   'A moeda é uma fonte material. O mapa é uma fonte cartográfica. O mapa mostra lugares, mas não indica quem usava a moeda.')
 ];
-const places=[
- ['Dublin','Ireland'],['Ottawa','Canada'],['London','the United Kingdom'],['Wellington','New Zealand'],
- ['Canberra','Australia'],['Lisbon','Portugal'],['New Delhi','India']
-];
-const weekdays=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-const objects=[['rulers','measure a line'],['pencils','write and erase easily'],['notebooks','take notes'],['rubbers','erase pencil marks'],['pairs of scissors','cut paper']];
-const landscapes=[['Ponte','Escola','a oeste','a este'],['Museu','Biblioteca','a norte','a sul'],['Mercado','Estação','a sudoeste','a nordeste'],['Castelo','Praça','a sudeste','a noroeste']];
-const traces=[['uma chave','uma casa com fechadura'],['uma mó','moagem de cereais'],['um anzol','pesca'],['uma moeda','uso de dinheiro nas trocas'],['um fragmento de uma telha','cobertura de um edifício']];
-const routes=[['1297','Tratado de Alcanizes','1385','batalha de Aljubarrota'],['711','chegada de forças muçulmanas à península','1143','encontro de Zamora'],['1498','chegada de Vasco da Gama à Índia','1640','Restauração da Independência'],['1128','batalha de São Mamede','1179','reconhecimento papal do reino']];
-const rocks=[['xisto','telhados','granito','muros'],['calcário','pavimentos','basalto','calçada'],['granito','degraus','mármore','bancadas']];
-const creatures=[['truta','salamandra','pinheiro'],['sardinha','rã','sobreiro'],['carpa','tritão','carvalho'],['bacalhau','sapo','azinheira']];
-function englishPractice(n){
- const cycle=Math.floor(n/6);
- const [city,country]=places[cycle%places.length];
- const day=weekdays[(cycle+Math.floor(cycle/7)+2)%7];
- const [thing,purpose]=objects[(cycle+1)%objects.length];
- const amount=2+cycle%7;
- switch(n%6){
-  case 0: return card('Ler uma mensagem','Procura a cidade, o objeto e o dia. O nome do país serve de pista, mas responde à pergunta que está escrita.',
-   `Send ${amount} ${thing} to ${city}, ${country}, on ${day}. Write the city, the number and name of the objects, and the day.`,
-   `City: ${city}. Objects: ${amount} ${thing}. Day: ${day}.`);
-  case 1: return card('Country e capital','Uma capital é uma cidade. Um país é um território. Exemplo: France is a country. Paris is its capital.',
-   `The pen pal lives in ${city}, the capital of ${country}. Write two short sentences. Say which place is the country and which is the capital.`,
-   `${country[0].toUpperCase()+country.slice(1)} is the country. ${city} is its capital.`);
-  case 2: return card('O dia da semana','Usa on antes de um dia da semana. Exemplo: “We meet on Monday.”',
-   `Correct the sentence: “We send the books at ${day}.” Write the whole sentence.`,
-   `We send the books on ${day}.`);
-  case 3: return card('O plural de scissors','Em inglês, scissors é plural e usa are. A pair of scissors tem como núcleo pair e usa is.',
-   `The scissors are in the ${cycle%2?'school bag':'desk'}. Ask where the scissors are. Then write one sentence giving their location.`,
-   `Where are the scissors? The scissors are in the ${cycle%2?'school bag':'desk'}.`);
-  case 4: return card('Pedir material com educação','Podes começar um pedido com “May I borrow…?” Usa o nome do material em inglês.',
-   `You need ${amount} ${thing}. Write a polite request to a classmate and say what you need them to do: ${purpose}.`,
-   `May I borrow ${amount} ${thing}, please? I need to ${purpose}.`);
-  default: return card('Duas informações num aviso','Primeiro encontra os números. Depois liga cada número à palavra certa. Usa on antes do dia.',
-   `Open your book on page ${12+cycle%38}. Bring ${amount} ${thing} on ${day}. Write the page and say what to bring and when.`,
-   `Page ${12+cycle%38}. Bring ${amount} ${thing} on ${day}.`);
- }
-}
-function sciencePractice(n){
- const cycle=Math.floor(n/6);
- const [fish,amphibian,plant]=creatures[cycle%creatures.length];
- const [a,useA,b,useB]=rocks[cycle%rocks.length];
- const upper=50+(cycle*7)%41,lower=10+(cycle*3)%21;
- const shallow=1+cycle%3,deep=shallow+3+cycle%5;
- switch(n%6){
-  case 0: return card('Comparar dois valores','Escreve o que aumenta ou diminui. Liga cada número à profundidade certa.',
-   `A ${shallow} m há ${upper} unidades de luz. A ${deep} m há ${lower}. Diz como muda a luz e cita os dois valores com as profundidades.`,
-   `A luz diminui. A ${shallow} m há ${upper} unidades de luz e a ${deep} m há ${lower}.`);
-  case 1: return card('Dois animais, dois meios','Responde na ordem em que a pergunta pede. Uma frase para cada animal chega.',
-   `A ${fish} vive na água. O animal chamado ${amphibian} usa a água e a margem. Na margem há um ${plant}. Nomeia primeiro o animal aquático e depois o animal que usa os dois meios.`,
-   `Animal exclusivamente aquático no exemplo: ${fish}. Animal que usa os dois meios: ${amphibian}.`);
-  case 2: return card('Rochas e usos','Escreve o nome da rocha junto do respetivo uso. Uma palavra solta não mostra a ligação.',
-   `Na aldeia, o ${a} é usado em ${useA} e o ${b} em ${useB}. Escreve duas frases ligando cada rocha ao seu uso.`,
-   `Usam ${a} em ${useA}. Usam ${b} em ${useB}.`);
-  case 3: return card('Rocha ou mineral','Um mineral pode fazer parte de uma rocha. O granito pode conter quartzo, feldspato e mica.',
-   `Numa amostra de granito observam-se grãos de ${['quartzo','feldspato','mica'][cycle%3]}. Identifica a rocha e o mineral observado. Explica a relação entre eles.`,
-   `A rocha é o granito. O mineral observado é ${['quartzo','feldspato','mica'][cycle%3]}; é um dos minerais que podem formar o granito.`);
-  case 4: return card('Subsistemas da Terra','A hidrosfera é a água; a geosfera inclui as rochas e o solo. Nomeia o exemplo e o subsistema.',
-   `Junto a um ribeiro há água, ${cycle%2?'areia':'seixos'} e um ${plant}. Identifica um elemento da hidrosfera e um da geosfera.`,
-   `A água do ribeiro é da hidrosfera. ${cycle%2?'A areia pertence':'Os seixos pertencem'} à geosfera.`);
-  default: return card('Evidência e conclusão','Um dado pode responder a uma pergunta e deixar outra em aberto. Diz primeiro o que o dado mostra.',
-   `Num lago, a luz medida foi ${upper} unidades à superfície e ${lower} junto ao fundo. O registo não inclui temperatura. Escreve uma conclusão sobre a luz e diz que medição falta para comparar as temperaturas.`,
-   `A superfície tem mais luz (${upper}) do que o fundo (${lower}). Faltam medições da temperatura à superfície e junto ao fundo.`);
- }
-}
-function historyPractice(n){
- const cycle=Math.floor(n/6);
- const [object,activity]=traces[cycle%traces.length];
- const [point,reference,direction,opposite]=landscapes[cycle%landscapes.length];
- const [yearA,eventA,yearB,eventB]=routes[cycle%routes.length];
- switch(n%6){
-  case 0: return card('Objeto e mapa','Para classificar uma fonte, começa por dizer se é um objeto, um mapa ou um texto. Escreve também o que ela permite saber.',
-   `Encontrámos ${object} e um mapa antigo da povoação. Classifica as duas fontes e diz o que o mapa pode mostrar.`,
-   `O objeto é uma fonte material. O mapa é uma fonte cartográfica e pode mostrar onde ficava a povoação.`);
-  case 1: return card('O que é uma pista?','Uma pista ajuda a explicar algo. Um objeto antigo raramente permite saber sozinho o nome do dono.',
-   `Os arqueólogos encontraram ${object}. Que atividade ou situação pode o objeto sugerir? Explica por que não basta para identificar o seu dono.`,
-   `Pode sugerir ${activity}. O objeto, por si só, não indica quem o possuía.`);
-  case 2: return card('Onde e em relação a quê?','A direção depende do ponto de partida. Se inverteres o percurso, a direção também se inverte.',
-   `Num mapa, o lugar «${point}» está ${direction} do lugar «${reference}». Escreve como vais de «${point}» para «${reference}», indicando a direção.`,
-   `De «${point}» para «${reference}» vou ${opposite}.`);
-  case 3: return card('Ler datas','Numa cronologia, escreve primeiro o acontecimento mais antigo. Associa o ano ao acontecimento.',
-   `Dois cartões: ${yearB} — ${eventB}; ${yearA} — ${eventA}. Escreve a sequência do mais antigo para o mais recente, com os anos.`,
-   `Primeiro, ${yearA} — ${eventA}. Depois, ${yearB} — ${eventB}.`);
-  case 4: return card('Copiar ou explicar','Transcrever é copiar exatamente. Explicar é dizer o significado com as tuas palavras.',
-   `Lê: «Junto de «${reference}» há uma feira. Os moradores vendem fruta às sextas-feiras.» Transcreve a frase que diz quando vendem fruta. Depois, diz o dia numa frase tua.`,
-   '«Os moradores vendem fruta às sextas-feiras.» Por outras palavras: a venda acontece à sexta-feira.');
-  default: return card('Lugar e atividade','«Onde?» pede um lugar. «O que fazem?» pede uma atividade. Responde a cada pergunta numa frase.',
-   `O texto diz: «Junto de «${point}», há moradores que vendem vasos de barro.» Onde vendem os vasos? Que atividade fazem?`,
-   `Vendem os vasos junto de «${point}». A atividade é o comércio ou a venda de vasos de barro.`);
- }
-}
-function defaultPlan(day){
- if(day===1)return firstDay;
- const index=day-2;
- return [englishPractice(index),sciencePractice(index),historyPractice(index)];
-}
 
 const startDate='2026-11-07';
 const stateKey='daily-review-answers-v1';
@@ -161,7 +65,7 @@ function lisbonDate(){
 }
 function dayNumber(date){return Math.max(1,1+Math.round((Date.parse(date)-Date.parse(startDate))/dayMs))}
 function dateFor(index){return new Date(Date.parse(startDate)+index*dayMs).toISOString().slice(0,10)}
-let state={}, current=dayNumber(lisbonDate())-1, assignments={}, refreshTimer;
+let state={}, current=dayNumber(lisbonDate())-1, assignments={}, readiness={}, refreshTimer;
 try{state=JSON.parse(localStorage.getItem(stateKey)||'{}')||{}}catch{}
 const escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const tasks=document.querySelector('#tasks');
@@ -170,17 +74,32 @@ function save(){try{localStorage.setItem(stateKey,JSON.stringify(state));return 
 function validPlan(plan){
  return Array.isArray(plan)&&plan.length===3&&plan.every(item=>item&&['title','tip','prompt','model'].every(key=>typeof item[key]==='string'&&item[key].trim()));
 }
-function updateParent(r){
- document.querySelector('#parent-status').textContent='第 '+(current+1)+' 天：'+(r.submitted?'已点完成。':r.draft.some(answer=>answer?.trim())?'有草稿。':'还未开始。');
+function updateParent(r,waiting='还未开始。'){
+ document.querySelector('#parent-status').textContent='第 '+(current+1)+' 天：'+(r.submitted?'已点完成。':r.draft.some(answer=>answer?.trim())?'有草稿。':waiting);
+}
+function readyForReview(status){
+ return status&&(status.english===true||status.english===null)&&status.science===true&&status.history===true;
+}
+function renderWaiting(r,status){
+ const ready=readyForReview(status);
+ const reason=ready?'小测已提交，等答卷审核和针对性订正题。':status?'等当天各科小测提交。':'等待检查云端小测状态。';
+ updateParent(r,reason);
+ const labels=[['english','Inglês'],['science','Ciências Naturais'],['history','História e Geografia']];
+ const checklist=status?'<ul>'+labels.map(([key,label])=>'<li>'+label+' · '+(status[key]===null?'sem teste previsto':status[key]?'teste entregue':'a aguardar entrega')+'</li>').join('')+'</ul>':'';
+ tasks.innerHTML='<section class="panel" aria-live="polite"><h3>'+(ready?'À espera da correção':'Primeiro, termina os testes do dia')+'</h3>'+
+  '<p>'+(ready?'Os testes chegaram à nuvem. As perguntas de revisão aparecem aqui depois de as respostas serem revistas.':'Estuda nas páginas das disciplinas e entrega os testes deste dia. As perguntas de revisão serão preparadas depois.')+'</p>'+checklist+'</section>';
 }
 function render(){
  const date=dateFor(current);
  const day=current+1;
  const r=state[current]??{draft:[]};
- const plan=validPlan(r.plan)?r.plan:validPlan(assignments[day]?.plan)?assignments[day].plan:defaultPlan(day);
+ const status=readiness[day];
+ const assigned=assignments[day]?.plan;
+ const plan=validPlan(r.plan)?r.plan:day===1?firstDay:readyForReview(status)&&validPlan(assigned)?assigned:null;
  picker.min=startDate;picker.max=lisbonDate();picker.value=date;
  document.querySelector('#day-title').textContent='Dia '+day;
  document.querySelector('#day-date').textContent=date.split('-').reverse().join('/')+' · hora de Portugal continental';
+ if(!plan){renderWaiting(r,status);return;}
  updateParent(r);
  const feedback=assignments[day]?.feedback;
  tasks.innerHTML='<form id="review-form">'+plan.map((item,i)=>{
@@ -317,11 +236,13 @@ async function cloudConnect(){
    return;
   }
   const selected=current;
-  const [rows,scheduled]=await Promise.all([
+  const [rows,scheduled,progress]=await Promise.all([
    cloudRequest('/daily_review_answers?select=day,revision,record&order=day.desc&limit=100&day=gte.'+Math.max(1,selected-89)+'&day=lte.'+(selected+1)),
    cloudRequest('/daily_review_assignments?select=day,plan,feedback&day=eq.'+(selected+1)),
+   cloudRequest('/rpc/daily_review_readiness?requested_day='+(selected+1)),
   ]);
   cloudMerge(rows,selected);
+  readiness[selected+1]=progress[0];
   delete assignments[selected+1];
   for(const row of scheduled)assignments[row.day]=row;
   cloudReady=true;
