@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Revisão diária · Três perguntas</title>
+<style>
+:root{color-scheme:light;--paper:#f7f4ed;--ink:#1c302f;--soft:#e7eeea;--muted:#4b6260;--line:#bdccc4;--green:#28574e}*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 system-ui,sans-serif}header{background:#173c36;color:white;padding:30px max(16px,calc((100vw - 880px)/2)) 26px;border-bottom:5px solid #e6bb72}
+h1{font:clamp(2.4rem,6vw,4.1rem)/1.02 Georgia,serif;margin:6px 0 14px}h2,h3{margin:0 0 8px}p{margin:0 0 10px}.eyebrow{font-size:.78rem;letter-spacing:.13em;font-weight:800;color:#f4d39f}
+main,footer{max-width:920px;padding:16px;margin:auto}.panel,.question{background:#fff;border:1px solid var(--line);border-radius:14px;padding:clamp(13px,3vw,22px);margin-bottom:14px}
+.question{border-left:5px solid #8b5631}.question.science{border-left-color:#49754d}.question.history{border-left-color:#466990}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.meta{font-size:.9rem;color:var(--muted)}.status{min-height:1.35em}.tag{font-weight:700;color:var(--green);font-size:.88rem}.toolbar{justify-content:space-between}
+label,summary{font-weight:700}summary{cursor:pointer}input,textarea,button{font:inherit;border:1px solid #78908a;border-radius:7px;padding:7px 10px;background:white;color:var(--ink);min-height:44px}button{cursor:pointer;font-weight:750}button.primary{background:var(--green);color:white;border-color:var(--green)}button[hidden]{display:none}button:disabled{cursor:default;opacity:.68}
+textarea{width:100%;min-height:90px;display:block;margin-top:8px;resize:vertical}input[type=password]{max-width:100%;width:16em}.tip,.model{padding:10px 13px;margin-top:8px;background:#edf4ef;border-radius:7px;white-space:pre-wrap}.feedback{border-left:4px solid #668997}.prompt{white-space:pre-wrap;font-weight:650}a{color:#245749}details{margin:8px 0}summary:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid #b46c2f;outline-offset:2px}.completed{color:#225247;font-weight:750}.help{margin-top:10px}.danger{color:#853326}
+</style>
+</head>
+<body>
+<header><div class="eyebrow">TRÊS DISCIPLINAS · CERCA DE 15 MINUTOS</div><h1>Revisão diária</h1><p>Depois das aulas, responde a uma pergunta de cada disciplina. Usa as tuas palavras.</p></header>
+<main>
+ <section class="panel" aria-labelledby="calendar-heading">
+  <div class="row toolbar"><div><p class="tag" id="calendar-heading">DIA DE REVISÃO</p><h2 id="day-title"></h2><p class="meta" id="day-date"></p></div>
+   <button type="button" id="today">Atualizar e ver hoje</button></div>
+  <details><summary>Consultar outro dia</summary><label for="day-picker">Data da revisão</label> <input type="date" id="day-picker"></details>
+ </section>
+ <section class="panel" aria-labelledby="cloud-heading">
+  <h3 id="cloud-heading">Respostas na nuvem</h3><p class="meta status" id="cloud-status" role="status"></p>
+  <details><summary>Ligar este dispositivo</summary><p>Usa o código privado das três disciplinas.</p>
+   <form id="cloud-form"><label for="cloud-code">Código privado de ligação</label><br><input id="cloud-code" type="password" required autocomplete="off" autocapitalize="none" spellcheck="false"> <button type="submit">Ligar</button></form>
+  </details>
+  <div class="row"><button id="cloud-refresh" type="button" hidden>Consultar a nuvem</button><button id="cloud-resolve" type="button" hidden>Resolver versões diferentes</button></div>
+  <details lang="zh-Hans"><summary>家长查看</summary><p id="parent-status"></p><p id="parent-cloud"></p><p>每天用同一个浏览器打开本页，点「Atualizar e ver hoje」查看新题。三题写完后点「Concluir」，看到「✓ Guardado na nuvem」表示云端已收到。</p></details>
+ </section>
+ <div id="tasks"></div>
+</main>
+<footer><p><a href="./">Inglês</a> · <a href="./ciencias-naturais.html">Ciências Naturais</a> · <a href="./historia-geografia.html">História e Geografia</a></p><p class="meta">Os modelos aparecem após a entrega. A revisão das respostas abertas é feita por leitura.</p></footer>
+<script>
+const subjects = [
+ {name:'Inglês', className:'english', lang:'en-GB'},
+ {name:'Ciências Naturais', className:'science', lang:'pt-PT'},
+ {name:'História e Geografia', className:'history', lang:'pt-PT'}
+];
+const card=(title,tip,prompt,model)=>({title,tip,prompt,model});
+const firstDay=[
+ card('Cidade, objetos e dia',
+  'Exemplo: “Take three pens to Porto on Monday.” Cidade: Porto. Objetos: three pens. Dia: Monday. Lê a frase de novo e escreve um dado de cada vez.',
+  'Send two notebooks to Dublin on Friday. Write the city, the objects and the day.',
+  'City: Dublin. Objects: two notebooks. Day: Friday.'),
+ card('Luz e profundidade',
+  'Exemplo: se a luz passa de 40 para 10 unidades à medida que descemos, a luz diminui. Numa comparação, escreve os dois valores e as respetivas profundidades.',
+  'A 1 m há 60 unidades de luz. A 5 m há 20. Diz como muda a luz. Usa os dois números.',
+  'A luz diminui com a profundidade: a 1 m há 60 unidades de luz e a 5 m há 20.'),
+ card('Objetos e mapas',
+  'Uma chave antiga é um objeto: uma fonte material. Um mapa mostra lugares: é uma fonte cartográfica. Para saber quem usava a chave, precisamos de uma fonte que dê essa informação.',
+  'Encontrámos uma moeda antiga e um mapa. Que tipo de fonte é cada um? O mapa mostra quem usava a moeda? Explica.',
+  'A moeda é uma fonte material. O mapa é uma fonte cartográfica. O mapa mostra lugares, mas não indica quem usava a moeda.')
+];
+const places=[
+ ['Dublin','Ireland'],['Ottawa','Canada'],['London','the United Kingdom'],['Wellington','New Zealand'],
+ ['Canberra','Australia'],['Lisbon','Portugal'],['New Delhi','India']
+];
+const weekdays=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const objects=[['rulers','measure a line'],['pencils','write and erase easily'],['notebooks','take notes'],['rubbers','erase pencil marks'],['pairs of scissors','cut paper']];
+const landscapes=[['Ponte','Escola','a oeste','a este'],['Museu','Biblioteca','a norte','a sul'],['Mercado','Estação','a sudoeste','a nordeste'],['Castelo','Praça','a sudeste','a noroeste']];
+const traces=[['uma chave','uma casa com fechadura'],['uma mó','moagem de cereais'],['um anzol','pesca'],['uma moeda','uso de dinheiro nas trocas'],['um fragmento de uma telha','cobertura de um edifício']];
+const routes=[['1297','Tratado de Alcanizes','1385','batalha de Aljubarrota'],['711','chegada de forças muçulmanas à península','1143','encontro de Zamora'],['1498','chegada de Vasco da Gama à Índia','1640','Restauração da Independência'],['1128','batalha de São Mamede','1179','reconhecimento papal do reino']];
+const rocks=[['xisto','telhados','granito','muros'],['calcário','pavimentos','basalto','calçada'],['granito','degraus','mármore','bancadas']];
+const creatures=[['truta','salamandra','pinheiro'],['sardinha','rã','sobreiro'],['carpa','tritão','carvalho'],['bacalhau','sapo','azinheira']];
+function englishPractice(n){
+ const cycle=Math.floor(n/6);
+ const [city,country]=places[cycle%places.length];
+ const day=weekdays[(cycle+Math.floor(cycle/7)+2)%7];
+ const [thing,purpose]=objects[(cycle+1)%objects.length];
+ const amount=2+cycle%7;
+ switch(n%6){
+  case 0: return card('Ler uma mensagem','Procura a cidade, o objeto e o dia. O nome do país serve de pista, mas responde à pergunta que está escrita.',
+   `Send ${amount} ${thing} to ${city}, ${country}, on ${day}. Write the city, the number and name of the objects, and the day.`,
+   `City: ${city}. Objects: ${amount} ${thing}. Day: ${day}.`);
+  case 1: return card('Country e capital','Uma capital é uma cidade. Um país é um território. Exemplo: France is a country. Paris is its capital.',
+   `The pen pal lives in ${city}, the capital of ${country}. Write two short sentences. Say which place is the country and which is the capital.`,
+   `${country[0].toUpperCase()+country.slice(1)} is the country. ${city} is its capital.`);
+  case 2: return card('O dia da semana','Usa on antes de um dia da semana. Exemplo: “We meet on Monday.”',
+   `Correct the sentence: “We send the books at ${day}.” Write the whole sentence.`,
+   `We send the books on ${day}.`);
+  case 3: return card('O plural de scissors','Em inglês, scissors é plural e usa are. A pair of scissors tem como núcleo pair e usa is.',
+   `The scissors are in the ${cycle%2?'school bag':'desk'}. Ask where the scissors are. Then write one sentence giving their location.`,
+   `Where are the scissors? The scissors are in the ${cycle%2?'school bag':'desk'}.`);
+  case 4: return card('Pedir material com educação','Podes começar um pedido com “May I borrow…?” Usa o nome do material em inglês.',
+   `You need ${amount} ${thing}. Write a polite request to a classmate and say what you need them to do: ${purpose}.`,
+   `May I borrow ${amount} ${thing}, please? I need to ${purpose}.`);
+  default: return card('Duas informações num aviso','Primeiro encontra os números. Depois liga cada número à palavra certa. Usa on antes do dia.',
+   `Open your book on page ${12+cycle%38}. Bring ${amount} ${thing} on ${day}. Write the page and say what to bring and when.`,
+   `Page ${12+cycle%38}. Bring ${amount} ${thing} on ${day}.`);
+ }
+}
+function sciencePractice(n){
+ const cycle=Math.floor(n/6);
+ const [fish,amphibian,plant]=creatures[cycle%creatures.length];
+ const [a,useA,b,useB]=rocks[cycle%rocks.length];
+ const upper=50+(cycle*7)%41,lower=10+(cycle*3)%21;
+ const shallow=1+cycle%3,deep=shallow+3+cycle%5;
+ switch(n%6){
+  case 0: return card('Comparar dois valores','Escreve o que aumenta ou diminui. Liga cada número à profundidade certa.',
+   `A ${shallow} m há ${upper} unidades de luz. A ${deep} m há ${lower}. Diz como muda a luz e cita os dois valores com as profundidades.`,
+   `A luz diminui. A ${shallow} m há ${upper} unidades de luz e a ${deep} m há ${lower}.`);
+  case 1: return card('Dois animais, dois meios','Responde na ordem em que a pergunta pede. Uma frase para cada animal chega.',
+   `A ${fish} vive na água. O animal chamado ${amphibian} usa a água e a margem. Na margem há um ${plant}. Nomeia primeiro o animal aquático e depois o animal que usa os dois meios.`,
+   `Animal exclusivamente aquático no exemplo: ${fish}. Animal que usa os dois meios: ${amphibian}.`);
+  case 2: return card('Rochas e usos','Escreve o nome da rocha junto do respetivo uso. Uma palavra solta não mostra a ligação.',
+   `Na aldeia, o ${a} é usado em ${useA} e o ${b} em ${useB}. Escreve duas frases ligando cada rocha ao seu uso.`,
+   `Usam ${a} em ${useA}. Usam ${b} em ${useB}.`);
+  case 3: return card('Rocha ou mineral','Um mineral pode fazer parte de uma rocha. O granito pode conter quartzo, feldspato e mica.',
+   `Numa amostra de granito observam-se grãos de ${['quartzo','feldspato','mica'][cycle%3]}. Identifica a rocha e o mineral observado. Explica a relação entre eles.`,
+   `A rocha é o granito. O mineral observado é ${['quartzo','feldspato','mica'][cycle%3]}; é um dos minerais que podem formar o granito.`);
+  case 4: return card('Subsistemas da Terra','A hidrosfera é a água; a geosfera inclui as rochas e o solo. Nomeia o exemplo e o subsistema.',
+   `Junto a um ribeiro há água, ${cycle%2?'areia':'seixos'} e um ${plant}. Identifica um elemento da hidrosfera e um da geosfera.`,
+   `A água do ribeiro é da hidrosfera. ${cycle%2?'A areia pertence':'Os seixos pertencem'} à geosfera.`);
+  default: return card('Evidência e conclusão','Um dado pode responder a uma pergunta e deixar outra em aberto. Diz primeiro o que o dado mostra.',
+   `Num lago, a luz medida foi ${upper} unidades à superfície e ${lower} junto ao fundo. O registo não inclui temperatura. Escreve uma conclusão sobre a luz e diz que medição falta para comparar as temperaturas.`,
+   `A superfície tem mais luz (${upper}) do que o fundo (${lower}). Faltam medições da temperatura à superfície e junto ao fundo.`);
+ }
+}
+function historyPractice(n){
+ const cycle=Math.floor(n/6);
+ const [object,activity]=traces[cycle%traces.length];
+ const [point,reference,direction,opposite]=landscapes[cycle%landscapes.length];
+ const [yearA,eventA,yearB,eventB]=routes[cycle%routes.length];
+ switch(n%6){
+  case 0: return card('Objeto e mapa','Para classificar uma fonte, começa por dizer se é um objeto, um mapa ou um texto. Escreve também o que ela permite saber.',
+   `Encontrámos ${object} e um mapa antigo da povoação. Classifica as duas fontes e diz o que o mapa pode mostrar.`,
+   `O objeto é uma fonte material. O mapa é uma fonte cartográfica e pode mostrar onde ficava a povoação.`);
+  case 1: return card('O que é uma pista?','Uma pista ajuda a explicar algo. Um objeto antigo raramente permite saber sozinho o nome do dono.',
+   `Os arqueólogos encontraram ${object}. Que atividade ou situação pode o objeto sugerir? Explica por que não basta para identificar o seu dono.`,
+   `Pode sugerir ${activity}. O objeto, por si só, não indica quem o possuía.`);
+  case 2: return card('Onde e em relação a quê?','A direção depende do ponto de partida. Se inverteres o percurso, a direção também se inverte.',
+   `Num mapa, o lugar «${point}» está ${direction} do lugar «${reference}». Escreve como vais de «${point}» para «${reference}», indicando a direção.`,
+   `De «${point}» para «${reference}» vou ${opposite}.`);
+  case 3: return card('Ler datas','Numa cronologia, escreve primeiro o acontecimento mais antigo. Associa o ano ao acontecimento.',
+   `Dois cartões: ${yearB} — ${eventB}; ${yearA} — ${eventA}. Escreve a sequência do mais antigo para o mais recente, com os anos.`,
+   `Primeiro, ${yearA} — ${eventA}. Depois, ${yearB} — ${eventB}.`);
+  case 4: return card('Copiar ou explicar','Transcrever é copiar exatamente. Explicar é dizer o significado com as tuas palavras.',
+   `Lê: «Junto de «${reference}» há uma feira. Os moradores vendem fruta às sextas-feiras.» Transcreve a frase que diz quando vendem fruta. Depois, diz o dia numa frase tua.`,
+   '«Os moradores vendem fruta às sextas-feiras.» Por outras palavras: a venda acontece à sexta-feira.');
+  default: return card('Lugar e atividade','«Onde?» pede um lugar. «O que fazem?» pede uma atividade. Responde a cada pergunta numa frase.',
+   `O texto diz: «Junto de «${point}», há moradores que vendem vasos de barro.» Onde vendem os vasos? Que atividade fazem?`,
+   `Vendem os vasos junto de «${point}». A atividade é o comércio ou a venda de vasos de barro.`);
+ }
+}
+function defaultPlan(day){
+ if(day===1)return firstDay;
+ const index=day-2;
+ return [englishPractice(index),sciencePractice(index),historyPractice(index)];
+}
+
+const startDate='2026-11-07';
+const stateKey='daily-review-answers-v1';
+const dayMs=86400000;
+const dateParts=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Lisbon',year:'numeric',month:'2-digit',day:'2-digit'});
+function lisbonDate(){
+ const parts=Object.fromEntries(dateParts.formatToParts(new Date()).map(({type,value})=>[type,value]));
+ return [parts.year,parts.month,parts.day].join('-');
+}
+function dayNumber(date){return Math.max(1,1+Math.round((Date.parse(date)-Date.parse(startDate))/dayMs))}
+function dateFor(index){return new Date(Date.parse(startDate)+index*dayMs).toISOString().slice(0,10)}
+let state={}, current=dayNumber(lisbonDate())-1, assignments={}, refreshTimer;
+try{state=JSON.parse(localStorage.getItem(stateKey)||'{}')||{}}catch{}
+const escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const tasks=document.querySelector('#tasks');
+const picker=document.querySelector('#day-picker');
+function save(){try{localStorage.setItem(stateKey,JSON.stringify(state));return true}catch{return false}}
+function validPlan(plan){
+ return Array.isArray(plan)&&plan.length===3&&plan.every(item=>item&&['title','tip','prompt','model'].every(key=>typeof item[key]==='string'&&item[key].trim()));
+}
+function updateParent(r){
+ document.querySelector('#parent-status').textContent='第 '+(current+1)+' 天：'+(r.submitted?'已点完成。':r.draft.some(answer=>answer?.trim())?'有草稿。':'还未开始。');
+}
+function render(){
+ const date=dateFor(current);
+ const day=current+1;
+ const r=state[current]??{draft:[]};
+ const plan=validPlan(r.plan)?r.plan:validPlan(assignments[day]?.plan)?assignments[day].plan:defaultPlan(day);
+ picker.min=startDate;picker.max=lisbonDate();picker.value=date;
+ document.querySelector('#day-title').textContent='Dia '+day;
+ document.querySelector('#day-date').textContent=date.split('-').reverse().join('/')+' · hora de Portugal continental';
+ updateParent(r);
+ const feedback=assignments[day]?.feedback;
+ tasks.innerHTML='<form id="review-form">'+plan.map((item,i)=>{
+  const {name,className,lang}=subjects[i];
+  return '<section class="question '+className+'"><p class="tag">'+escapeHtml(name)+' · cerca de 5 min</p><h3>'+escapeHtml(item.title)+'</h3>'+
+   '<details><summary>Ver um exemplo antes de responder</summary><p class="tip">'+escapeHtml(item.tip)+'</p></details>'+
+   '<label class="prompt" lang="'+lang+'" for="answer'+i+'">'+escapeHtml(item.prompt)+'</label>'+
+   '<textarea required maxlength="1800" id="answer'+i+'" lang="'+lang+'" placeholder="Escreve a tua resposta">'+escapeHtml(r.draft[i]??'')+'</textarea>'+
+   (r.submitted?'<details><summary>Ver a resposta de referência</summary><p class="model" lang="'+lang+'">'+escapeHtml(item.model)+'</p><p class="meta">Resposta entregue</p><p class="model">'+escapeHtml(r.submitted.answers[i]??'')+'</p></details>':'')+'</section>';
+ }).join('')+'<div class="panel"><button type="submit" class="primary">'+(r.submitted?'Concluir novamente':'Concluir')+'</button>'+
+ (r.submitted?'<p class="completed help">✓ Revisão concluída.</p>':'')+'<p class="meta status" id="draft-status" role="status"></p></div></form>'+
+ (r.submitted&&feedback?'<section class="panel feedback"><h3>Comentário da revisão</h3><p class="model">'+escapeHtml(feedback)+'</p></section>':'');
+ const form=document.querySelector('#review-form');
+ form.addEventListener('input',e=>{
+  if(!/^answer[0-2]$/.test(e.target.id))return;
+  r.plan=plan;
+  r.draft[Number(e.target.id.slice(-1))]=e.target.value;
+  state[current]=r;
+  document.querySelector('#draft-status').textContent=save()?'Rascunho guardado neste dispositivo.':'Não foi possível guardar neste navegador.';
+  updateParent(r);
+  cloudChanged(current);
+ });
+ form.onsubmit=e=>{
+  e.preventDefault();
+  if(plan.some((_,i)=>!r.draft[i]?.trim())){
+   document.querySelector('#draft-status').textContent='Responde às três perguntas antes de concluir.';
+   return;
+  }
+  if(r.submitted&&!confirm('Guardar esta nova entrega em vez da anterior?'))return;
+  r.plan=plan;
+  r.submitted={answers:plan.map((_,i)=>r.draft[i]),at:new Date().toISOString()};
+  state[current]=r;
+  const saved=save();render();cloudChanged(current,true);
+  document.querySelector('#draft-status').textContent=saved?'Entrega guardada neste dispositivo. Confirma o estado da nuvem acima.':'Não foi possível guardar neste navegador.';
+ };
+}
+function refreshCloud(){
+ if(!cloud.code)return;
+ clearTimeout(refreshTimer);
+ if(cloudBusy){refreshTimer=setTimeout(refreshCloud,250);return;}
+ cloudConnect();
+}
+function selectDate(date){
+ if(date<startDate||date>lisbonDate()||!Number.isFinite(Date.parse(date)))return;
+ current=dayNumber(date)-1;render();
+ refreshCloud();
+}
+picker.onchange=()=>selectDate(picker.value);
+document.querySelector('#today').onclick=()=>selectDate(lisbonDate());
+render();
+const cloudUrl='https://lcbqfigjxyzebsexffjb.supabase.co/rest/v1';
+const cloudKey='sb_publishable_KghRh60u7agvrTOAPU7MTg_7E9r0j-d';
+const cloudStorage='daily-review-cloud-v1';
+let cloud={code:'',versions:{},pending:{}};
+try {
+ cloud={...cloud,...JSON.parse(localStorage.getItem(cloudStorage)||'{}')};
+ cloud.code=cloud.code||['english-lab-cloud-v1','science-lab-cloud-v1','hgp-lab-cloud-v1']
+  .map(key=>JSON.parse(localStorage.getItem(key)||'{}').code).find(Boolean)||'';
+}catch{}
+let cloudMessage=cloud.code?'A verificar a ligação…':'Liga este dispositivo para guardar na nuvem.';
+let cloudReady=false, cloudBusy=false, cloudTimer;
+const conflicts=new Map();
+function cloudPersist(){
+ try{localStorage.setItem(cloudStorage,JSON.stringify(cloud))}catch{}
+}
+function cloudStatus(message){
+ cloudMessage=message;
+ const label=document.querySelector('#cloud-status');
+ if(label)label.textContent=message;
+ const parent=document.querySelector('#parent-cloud');
+ if(parent)parent.textContent=conflicts.size?'有两个版本，请先处理冲突。'
+  :message.includes('Guardado na nuvem')?'已保存到云端。'
+  :message.includes('Ligado à nuvem')?'云端已连接。'
+  :message.includes('A guardar')?'正在同步。'
+  :cloud.code?'正在连接或重试，本机保留草稿。':'请用原来的私密连接码开启云端同步。';
+ const refresh=document.querySelector('#cloud-refresh');
+ if(refresh)refresh.hidden=!cloud.code;
+ const resolve=document.querySelector('#cloud-resolve');
+ if(resolve)resolve.hidden=!conflicts.size;
+}
+async function cloudRequest(path, options={}){
+ const response=await fetch(cloudUrl+path,{
+  method:options.method||'GET',
+  headers:{apikey:cloudKey,'x-english-lab-pairing':cloud.code,
+   ...(options.body?{'Content-Type':'application/json',Prefer:'return=representation'}:{})},
+  body:options.body?JSON.stringify(options.body):undefined,
+  signal:AbortSignal.timeout(12000),cache:'no-store',keepalive:Boolean(options.body && JSON.stringify(options.body).length<14000),
+ });
+ if(!response.ok){const error=new Error('Cloud '+response.status);error.status=response.status;throw error}
+ return response.json();
+}
+function cloudSchedule(delay=500){
+ clearTimeout(cloudTimer);
+ cloudTimer=setTimeout(()=>{cloudTimer=undefined;cloudFlush()},delay);
+}
+function cloudChanged(index,immediate=false){
+ if(!cloud.code)return;
+ cloud.pending[index]=(cloud.pending[index]||0)+1;
+ cloudPersist();
+ cloudStatus('A guardar na nuvem…');
+ cloudSchedule(immediate?0:500);
+}
+function hasWork(r){return Boolean(r?.submitted||r?.draft?.some(x=>x?.trim()))}
+function cloudMerge(rows,selected){
+ const remote=new Map(rows.map(row=>[row.day-1,row]));
+ for(const key of new Set([...Object.keys(state).map(Number).filter(i=>i<=selected&&i>=Math.max(0,selected-90)),...remote.keys()])){
+  const local=state[key], row=remote.get(key);
+  if(row && cloud.pending[key] && cloud.versions[key]!==row.revision){
+   conflicts.set(key,row);
+   continue;
+  }
+  if(row){
+   if(!cloud.pending[key] && hasWork(local) && !cloud.versions[key] && JSON.stringify(local)!==JSON.stringify(row.record)){
+    conflicts.set(key,row);
+    continue;
+   }
+   cloud.versions[key]=row.revision;
+   if(!cloud.pending[key])state[key]=row.record;
+  }else if(hasWork(local)&&!cloud.pending[key]){
+   delete cloud.versions[key];
+   cloud.pending[key]=1;
+  }
+ }
+ save();cloudPersist();
+}
+async function cloudConnect(){
+ if(cloudBusy||!cloud.code)return;
+ cloudBusy=true;
+ cloudStatus('A ligar à nuvem…');
+ try{
+  if(!await cloudRequest('/rpc/english_lab_is_paired')){
+   cloud.code='';cloudPersist();cloudReady=false;
+   cloudStatus('Código incorreto. Confirma e tenta novamente.');
+   return;
+  }
+  const selected=current;
+  const [rows,scheduled]=await Promise.all([
+   cloudRequest('/daily_review_answers?select=day,revision,record&order=day.desc&limit=100&day=gte.'+Math.max(1,selected-89)+'&day=lte.'+(selected+1)),
+   cloudRequest('/daily_review_assignments?select=day,plan,feedback&day=eq.'+(selected+1)),
+  ]);
+  cloudMerge(rows,selected);
+  delete assignments[selected+1];
+  for(const row of scheduled)assignments[row.day]=row;
+  cloudReady=true;
+  if(Object.keys(cloud.pending).length)cloudSchedule(0);
+  cloudStatus(conflicts.size?'Há versões diferentes. Escolhe qual guardar.':Object.keys(cloud.pending).length?'A guardar na nuvem…':state[current]?.submitted?'✓ Guardado na nuvem.':'✓ Ligado à nuvem.');
+  render();
+  if(current!==selected)setTimeout(cloudConnect,0);
+ }catch{
+  cloudReady=false;cloudStatus('Nuvem indisponível. As respostas ficam no dispositivo até voltar a ligar.');
+  cloudSchedule(8000);
+ }finally{
+  cloudBusy=false;
+  if(cloud.code && cloudTimer===undefined && Object.keys(cloud.pending).some(key=>!conflicts.has(+key)))cloudSchedule();
+ }
+}
+async function cloudFlush(){
+ if(!cloud.code||cloudBusy)return;
+ if(!cloudReady){await cloudConnect();return}
+ cloudBusy=true;
+ try{
+  for(const key of Object.keys(cloud.pending)){
+   if(conflicts.has(+key))continue;
+   const generation=cloud.pending[key], revision=cloud.versions[key];
+   const snapshot=JSON.parse(JSON.stringify(state[key]));
+   const item={record:snapshot,revision:(revision||0)+1,updated_at:new Date().toISOString()};
+   let rows;
+   try{
+    rows=revision?await cloudRequest('/daily_review_answers?day=eq.'+(+key+1)+'&revision=eq.'+revision,{method:'PATCH',body:item}):
+      await cloudRequest('/daily_review_answers',{method:'POST',body:{...item,day:+key+1}});
+   }catch(e){if(e.status!==409)throw e;rows=[]}
+   if(!rows.length){
+    const [other]=await cloudRequest('/daily_review_answers?select=day,revision,record&day=eq.'+(+key+1));
+    if(!other){delete cloud.versions[key];cloudSchedule(500);continue}
+    conflicts.set(+key,other);
+    continue;
+   }
+   cloud.versions[key]=rows[0].revision;
+   if(cloud.pending[key]===generation)delete cloud.pending[key];
+   cloudPersist();
+  }
+  cloudStatus(conflicts.size?'Há versões diferentes. Escolhe qual guardar.':Object.keys(cloud.pending).length?'A guardar na nuvem…':'✓ Guardado na nuvem.');
+ }catch{
+  cloudStatus('Sem ligação à nuvem. Guardado neste dispositivo. Nova tentativa automática.');
+  cloudSchedule(8000);
+ }finally{
+  cloudBusy=false;
+  if(cloud.code && cloudTimer===undefined && Object.keys(cloud.pending).some(key=>!conflicts.has(+key)))cloudSchedule();
+ }
+}
+document.querySelector('#cloud-form').addEventListener('submit',async e=>{
+ e.preventDefault();
+ if(cloudBusy)return;
+ const input=document.querySelector('#cloud-code'), code=input.value.trim().toLowerCase();
+ if(!/^[0-9a-f]{64}$/.test(code)){cloudStatus('Introduz o código completo de 64 caracteres.');return}
+ cloud.code=code;input.value='';cloudReady=false;cloudPersist();
+ await cloudConnect();
+});
+document.querySelector('#cloud-refresh').onclick=()=>cloudConnect();
+document.querySelector('#cloud-resolve').onclick=()=>{
+ if(cloudBusy)return;
+ for(const [index,row] of conflicts){
+  if(confirm('Prova do dia '+(index+1)+': guardar nesta nuvem a versão deste dispositivo? OK = este dispositivo; Cancelar = manter a versão da nuvem.')){
+   cloud.versions[index]=row.revision;
+   cloudChanged(index,true);
+  }else{
+   state[index]=row.record;cloud.versions[index]=row.revision;delete cloud.pending[index];
+  }
+ }
+ conflicts.clear();save();cloudPersist();render();cloudSchedule(0);
+};
+window.addEventListener('online',()=>cloudSchedule(0));
+window.addEventListener('pagehide',()=>{if(!cloudBusy&&Object.keys(cloud.pending).length)cloudFlush()});
+cloudStatus(cloudMessage);
+if(cloud.code)cloudConnect();
+
+</script>
+</body>
+</html>
