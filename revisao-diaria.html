@@ -80,6 +80,14 @@ function updateParent(r,waiting='还未开始。'){
 function readyForReview(status){
  return status&&(status.english===true||status.english===null)&&status.science===true&&status.history===true;
 }
+function samePlan(left,right){
+ return left.every((item,i)=>['title','tip','prompt','model'].every(key=>item[key]===right[i][key]));
+}
+function previousAttempts(attempts){
+ return attempts.map((attempt,index)=>'<details class="panel"><summary>Revisão anterior '+(index+1)+'</summary>'+
+  attempt.plan.map((item,i)=>'<h3>'+escapeHtml(subjects[i].name)+'</h3><p>'+escapeHtml(item.prompt)+'</p><p class="model">'+
+   escapeHtml((attempt.submitted?.answers??attempt.draft)[i]??'')+'</p>').join('')+'</details>').join('');
+}
 function renderWaiting(r,status){
  const ready=readyForReview(status);
  const reason=ready?'小测已提交，等答卷审核和针对性订正题。':status?'等当天各科小测提交。':'等待检查云端小测状态。';
@@ -92,17 +100,23 @@ function renderWaiting(r,status){
 function render(){
  const date=dateFor(current);
  const day=current+1;
- const r=state[current]??{draft:[]};
+ const savedRecord=state[current]??{draft:[]};
  const status=readiness[day];
  const assigned=assignments[day]?.plan;
- const plan=validPlan(r.plan)?r.plan:day===1?firstDay:readyForReview(status)&&validPlan(assigned)?assigned:null;
+ const reviewedPlan=readyForReview(status)&&validPlan(assigned)?assigned:null;
+ const hasSavedPlan=validPlan(savedRecord.plan);
+ const followUp=reviewedPlan&&hasSavedPlan&&!samePlan(savedRecord.plan,reviewedPlan);
+ const r=followUp?{draft:[],previous:[...(savedRecord.previous??[]),{plan:savedRecord.plan,draft:savedRecord.draft,submitted:savedRecord.submitted}]}:savedRecord;
+ const plan=reviewedPlan??(hasSavedPlan?savedRecord.plan:day===1?firstDay:null);
  picker.min=startDate;picker.max=lisbonDate();picker.value=date;
  document.querySelector('#day-title').textContent='Dia '+day;
  document.querySelector('#day-date').textContent=date.split('-').reverse().join('/')+' · hora de Portugal continental';
  if(!plan){renderWaiting(r,status);return;}
- updateParent(r);
+ updateParent(r,r.previous?.length?'针对小测的补练已发布。':undefined);
  const feedback=assignments[day]?.feedback;
- tasks.innerHTML='<form id="review-form">'+plan.map((item,i)=>{
+ const notes=feedback?'<section class="panel feedback"><h3>Comentário da revisão</h3><p class="model">'+escapeHtml(feedback)+'</p></section>':'';
+ const followUpHeading=r.previous?.length?'<section class="panel"><h3>Revisão dos teus testes</h3><p>A revisão anterior ficou guardada. Estas perguntas foram preparadas a partir dos testes de hoje.</p></section>':'';
+ tasks.innerHTML=followUpHeading+(r.previous?.length?notes:'')+'<form id="review-form">'+plan.map((item,i)=>{
   const {name,className,lang}=subjects[i];
   return '<section class="question '+className+'"><p class="tag">'+escapeHtml(name)+' · cerca de 5 min</p><h3>'+escapeHtml(item.title)+'</h3>'+
    '<details><summary>Ver um exemplo antes de responder</summary><p class="tip">'+escapeHtml(item.tip)+'</p></details>'+
@@ -111,7 +125,7 @@ function render(){
    (r.submitted?'<details><summary>Ver a resposta de referência</summary><p class="model" lang="'+lang+'">'+escapeHtml(item.model)+'</p><p class="meta">Resposta entregue</p><p class="model">'+escapeHtml(r.submitted.answers[i]??'')+'</p></details>':'')+'</section>';
  }).join('')+'<div class="panel"><button type="submit" class="primary">'+(r.submitted?'Concluir novamente':'Concluir')+'</button>'+
  (r.submitted?'<p class="completed help">✓ Revisão concluída.</p>':'')+'<p class="meta status" id="draft-status" role="status"></p></div></form>'+
- (r.submitted&&feedback?'<section class="panel feedback"><h3>Comentário da revisão</h3><p class="model">'+escapeHtml(feedback)+'</p></section>':'');
+ (!r.previous?.length&&r.submitted?notes:'')+previousAttempts(r.previous??[]);
  const form=document.querySelector('#review-form');
  form.addEventListener('input',e=>{
   if(!/^answer[0-2]$/.test(e.target.id))return;
